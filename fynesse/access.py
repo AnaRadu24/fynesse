@@ -6,6 +6,7 @@ import oauth2
 import mongodb
 import sqlite"""
 
+import os
 import urllib.request
 import pandas as pd
 import pymysql
@@ -22,6 +23,7 @@ import seaborn as sns # visualization
 import zipfile
 from sklearn.model_selection import train_test_split # data split
 from sklearn.metrics import explained_variance_score as evs # evaluation metric
+
 
 # This file accesses the data
 
