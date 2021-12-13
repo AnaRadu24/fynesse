@@ -67,7 +67,7 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
     fitted_model = train(dataset=prices_coordinates_data, max_training_size=max_training_size, tags=tags, pois_radius=pois_radius)
     y_pred = predict(fitted_model=fitted_model, latitude=latitude, longitude=longitude, tags=tags, pois_radius=pois_radius)
     print("Predicted price for a house of type " + property_type + "at latitude " + str(latitude) + " and longitude " + str(longitude) + " in " + date + 
-        " based on the houses sold in the previous " + str(date_range) + " on a radius of " + pois_radius*111 + "km is " + str(int(y_pred)))
+        " based on the houses sold in the previous " + str(date_range) + " on a radius of " + str(pois_radius*111) + "km is " + str(int(y_pred)))
     return int(y_pred)
 
 def test(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
