@@ -61,7 +61,7 @@ def plot(test_results):
     plt.show()
 
 def view_prediction_accuracy(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
-    test_results = test(conn, latitude, longitude, date, property_type, date_range, data_distance, tags, pois_radius, max_training_size)
+    test_results = address.test(conn, latitude, longitude, date, property_type, date_range, data_distance, tags, pois_radius, max_training_size)
     plot(test_results)
     return evs(test_results.price_prediction, test_results.price)
 
