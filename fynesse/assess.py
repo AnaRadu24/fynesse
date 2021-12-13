@@ -11,6 +11,7 @@ import sklearn.feature_extraction"""
 
 """Place commands in this file to assess the data you have downloaded. How are missing values encoded, how are outliers encoded? What do columns represent, makes rure they are correctly labeled. How is the data indexed. Crete visualisation routines to assess the data (e.g. in bokeh). Ensure that date formats are correct and correctly timezoned."""
 
+import osmnx as ox
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
@@ -28,3 +29,20 @@ def view(data):
 def labelled(data):
     """Provide a labelled set of data ready for supervised learning."""
     raise NotImplementedError
+
+def get_pois_features(latitude, longitude, tags, box_radius):
+    north = latitude + box_radius
+    south = latitude - box_radius
+    west = longitude - box_radius
+    east = longitude + box_radius
+    pois = ox.geometries_from_bbox(north, south, east, west, tags)
+    count_map = pois.count()
+    count_list = []
+    count_list.append(latitude)
+    count_list.append(longitude)
+    for tag in tags:
+        if tag in count_map:
+            count_list.append(float(min(15, count_map[tag])))
+        else:
+            count_list.append(float(0))
+    return count_list

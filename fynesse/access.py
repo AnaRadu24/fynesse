@@ -283,19 +283,3 @@ def upload_prices_coordinates_data(conn, latitude, longitude, date, property_typ
     prices_coordinates_schema(conn)
     load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
 
-def get_pois_features(latitude, longitude, tags, box_radius):
-    north = latitude + box_radius
-    south = latitude - box_radius
-    west = longitude - box_radius
-    east = longitude + box_radius
-    pois = ox.geometries_from_bbox(north, south, east, west, tags)
-    count_map = pois.count()
-    count_list = []
-    count_list.append(latitude)
-    count_list.append(longitude)
-    for tag in tags:
-        if tag in count_map:
-            count_list.append(float(min(15, count_map[tag])))
-        else:
-            count_list.append(float(0))
-    return count_list
