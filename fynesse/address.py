@@ -55,8 +55,10 @@ def predict(fitted_model, latitude, longitude, tags, pois_radius):
     return y_pred
 
 def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
-    prices_coordinates_data = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
+    prices_coordinates_rows = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
+    prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
+                                                                            "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
     print(prices_coordinates_data)
     fitted_model = train(dataset=prices_coordinates_data, max_training_size=max_training_size, tags=tags, pois_radius=pois_radius)
     y_pred = predict(fitted_model=fitted_model, latitude=latitude, longitude=longitude, tags=tags, pois_radius=pois_radius)
