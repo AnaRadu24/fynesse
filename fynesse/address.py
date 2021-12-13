@@ -83,17 +83,3 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
     test_results = test_data
     test_results['price_prediction'] = y_pred
     return test_results
-  
-def eval(test_results):
-    return evs(test_results.price_prediction, test_results.price)
-
-def plot(test_results):
-    plt.figure(figsize=(10,6))
-    plt.title("Predicted Price vs Actual Price")
-    test_results = test_results.reset_index()
-    sns.barplot(x=test_results.index, y=test_results.price, alpha=0.9, edgecolor='red', color='pink', linewidth=2, label='actual price')
-    sns.barplot(x=test_results.index, y=test_results.price_prediction, alpha=0.5, edgecolor='blue', color='darkblue', linewidth=3, label='predicted price')
-    plt.xlabel("Prediction number")
-    plt.ylabel("Price")
-    plt.legend()
-    plt.show()
