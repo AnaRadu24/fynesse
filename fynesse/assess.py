@@ -22,6 +22,13 @@ import seaborn as sns # visualization
 from sklearn.model_selection import train_test_split # data split
 from sklearn.metrics import explained_variance_score as evs # evaluation metric
 
+TAGS = {"amenity": True, 
+        "leisure": True, 
+        "shop": True, 
+        "healthcare": True, 
+        "sport": True, 
+        "public_transport": True}
+
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
     df = access.data()
