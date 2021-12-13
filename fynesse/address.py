@@ -49,7 +49,7 @@ def train(dataset, max_training_size, tags, pois_radius):
     df = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
     df["price"] = y
     df[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]] = training_data[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]]
-    pd.display(df)
+    display(df)
     fitted_model = sm.GLM(y, x, family = sm.families.Poisson()).fit()
     return fitted_model
 
@@ -87,5 +87,5 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
         y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
     test_results = test_data[['price', 'price_prediction', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']]
     test_results['price_prediction'] = y_pred
-    pd.display(test_results)
+    display(test_results)
     return test_results
