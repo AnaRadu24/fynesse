@@ -42,13 +42,15 @@ def train(dataset, max_training_size, tags, pois_radius):
     training_data = dataset.sample(n = min(max_training_size, dataset.shape[0]), random_state=0)
     x = []
     y = []
+    z = []
     for house in training_data.iterrows():
         pois_data = access.get_pois_features(float(house[1].latitude), float(house[1].longitude), tags=tags, box_radius=pois_radius)
         x.append(pois_data)
         y.append(house[1].price)
-    df = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
-    df["price"] = y
-    df[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]] = training_data[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]]
+        z.append([house[1].date_of_transfer, house[1].new_build_flag, house[1].tenure_type, house[1].locality, house[1].town_city, house[1].district])
+    df = pd.DataFrame(y, columns=['price'])
+    df[["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"]] = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
+    df[["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"]] = pd.DataFrame(z, columns=["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"])
     display(df)
     fitted_model = sm.GLM(y, x, family = sm.families.Poisson()).fit()
     return fitted_model
