@@ -298,4 +298,6 @@ def get_pois_features(latitude, longitude, tags, box_radius):
             count_list.append(float(min(15, count_map[tag])))
         else:
             count_list.append(float(0))
+    df = pd.DataFrame([count_list], columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
+    print(df)
     return count_list
