@@ -15,6 +15,7 @@ import tensorflow as tf
 import scipy.stats"""
 
 from .access import *
+from .assess import *
 
 import os
 import numpy as np
@@ -45,12 +46,14 @@ def train(dataset, max_training_size, tags, pois_radius):
         y.append(house[1].price)
     df = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
     df["price"] = y
-    print(df)
+    df[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]] = training_data[["date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", "locality", "town_city", "district", "county"]]
+    pd.display(df)
     fitted_model = sm.GLM(y, x, family = sm.families.Poisson()).fit()
     return fitted_model
 
 def predict(fitted_model, latitude, longitude, tags, pois_radius):
     x_pred = get_pois_features(latitude=latitude, longitude=longitude, tags=tags, box_radius=pois_radius)
+    view_pois_points(latitude, longitude)
     y_pred = fitted_model.get_prediction(x_pred).summary_frame(alpha=0.05)['mean'][0]
     return y_pred
 
@@ -58,8 +61,7 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
     prices_coordinates_rows = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
-                                                                            "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
-    print(prices_coordinates_data)
+                                                                            "locality", "town_city", "district", "county", "latitude", "longitude"])
     fitted_model = train(dataset=prices_coordinates_data, max_training_size=max_training_size, tags=tags, pois_radius=pois_radius)
     y_pred = predict(fitted_model=fitted_model, latitude=latitude, longitude=longitude, tags=tags, pois_radius=pois_radius)
     print("Predicted price for a house of type " + property_type + "at latitude " + str(latitude) + " and longitude " + str(longitude) + " in " + date + 
@@ -70,7 +72,7 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
     prices_coordinates_rows = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
-                                                                            "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
+                                                                            "locality", "town_city", "district", "county", "latitude", "longitude"])
     if prices_coordinates_data.shape[0] == 0:
         print(f'No data points found. Cannot make prediction.')
     if prices_coordinates_data.shape[0] < 10:
@@ -83,5 +85,5 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
         y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
     test_results = test_data[['price', 'price_prediction', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']]
     test_results['price_prediction'] = y_pred
-    print(test_results)
+    pd.display(test_results)
     return test_results

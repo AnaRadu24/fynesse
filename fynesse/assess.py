@@ -73,4 +73,9 @@ def view_prediction_accuracy(conn, latitude, longitude, date, property_type, dat
     plot(test_results)
     return evs(test_results.price_prediction, test_results.price)
 
-CREWE_1999 = {"latitude":53.357, "longitude":-1.489, "property_type":'S', "date": "1999-12-31", "county": 'CHESHIRE EAST'}
+def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
+    pois_list = get_pois_features(latitude, longitude, tags, box_radius)
+    pois_list.reverse()
+    print("Around point with latitude " + str(pois_list.pop()) + " and logitutde " + str(pois_list.pop()) + " on a radius of " +  box_radius*111 + "km there are a number of pois points of type: ")
+    for tag in tags:
+        print(tag + ": " + str(pois_list.pop()))

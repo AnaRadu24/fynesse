@@ -1,4 +1,6 @@
 from .config import *
+from .address import *
+from .assess import *
 
 """These are the types of import we might expect in this file
 import httplib2
@@ -283,7 +285,8 @@ def upload_prices_coordinates_data(conn, latitude, longitude, date, property_typ
     prices_coordinates_schema(conn)
     load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
 
-def get_pois_features(latitude, longitude, tags, box_radius):
+# 0.02 degrees wide approx 2.2km, 1 degree is around 111km
+def get_pois_features(latitude, longitude, tags=TAGS, box_radius=0.005):
     north = latitude + box_radius
     south = latitude - box_radius
     west = longitude - box_radius
@@ -299,5 +302,5 @@ def get_pois_features(latitude, longitude, tags, box_radius):
         else:
             count_list.append(float(0))
     df = pd.DataFrame([count_list], columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
-    print(df)
+    pd.display(df)
     return count_list
