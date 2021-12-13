@@ -54,7 +54,7 @@ def predict(fitted_model, latitude, longitude, tags, pois_radius):
     print(int(y_pred))
     return y_pred
 
-def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.03, tags=tags, pois_radius=0.005, max_training_size=15):
+def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
     prices_coordinates_data = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     print(prices_coordinates_data)
@@ -71,10 +71,10 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
         print(f'Few data points warning: Model created from only {prices_coordinates_data.shape[0]} data points.')
 
     train_data, test_data = train_test_split(prices_coordinates_data, test_size=0.1, random_state=0)
-    fitted_model = train(dataset=train_data, max_training_size=max_training_size, tags=tags, pois_radius=pois_radius)
+    fitted_model = train(dataset=train_data, max_training_size=max_training_size, tags=TAGS, pois_radius=pois_radius)
     y_pred = []
     for pred in test_data.iterrows():
-        y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
+        y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=TAGS, pois_radius=pois_radius)))
     test_results = test_data
     test_results['price_prediction'] = y_pred
     return test_results
