@@ -107,8 +107,7 @@ def price_paid_schema(conn):
     cur.execute("""CREATE INDEX `pp.date` USING HASH ON `pp_data` (date_of_transfer);""")
     conn.commit()
 
-def price_paid_columns():
-    return ['transaction_unique_identifier', 'price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+PP_COLUMNS = ['transaction_unique_identifier', 'price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
             'primary_addressable_object_name', 'secondary_addressable_object_name', 'street', 'locality', 'town_city', 'district', 'county',
             'record_status', 'ppd_category_type', 'db_id']
 
@@ -152,12 +151,11 @@ def postcode_schema(conn):
     """.replace("\n", " "))
     conn.commit()
 
-def postcode_columns():
-    return ['postcode', 'status', 'usertype', 'easting', 'northing', 'positional_quality_indicator', 'country', 'latitude', 'longitude',
+POSTCODE_COLUMNS = ['postcode', 'status', 'usertype', 'easting', 'northing', 'positional_quality_indicator', 'country', 'latitude', 'longitude',
             'postcode_no_space', 'postcode_fixed_width_seven', 'postcode_fixed_width_eight', 'postcode_area', 'postcode_district', 'postcode_sector',
             'outcode', 'incode', 'db_id']
 
-def pp_location_schema(conn):
+def prices_coordinates_schema(conn):
     cur = conn.cursor()
     cur.execute("DROP TABLE IF EXISTS `prices_coordinates_data`;")
     cur.execute("""
@@ -185,8 +183,7 @@ def pp_location_schema(conn):
     """.replace("\n", " "))
     conn.commit()
 
-def pp_location_columns():
-    return ['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+PRICES_COORDINATES_COLUMNS = ['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
             'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude', 'db_id']
 
 def load_data(conn, csv_name, table_name):
@@ -246,4 +243,59 @@ def data():
     upload_postcode_data(conn)
     house_prices = pd.DataFrame(execute_query(conn, 'SELECT * FROM pp_data'), columns=price_paid_columns())
     poscode_data = pd.DataFrame(execute_query(conn, 'SELECT * FROM postcode_data'), columns=postcode_columns())
+    # the big merge
     return pd.merge(house_prices, poscode_data, on = 'postcode', how = 'inner')
+
+def join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
+
+    d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
+    d2 = d1
+    d1 = d1 - datetime.timedelta(days=date_range)
+    d1 = d1.strftime("%Y-%m-%d")
+    d2 = d2.strftime("%Y-%m-%d")
+
+    lat1 = latitude - box_radius
+    lat2 = latitude + box_radius
+    lon1 = longitude - box_radius
+    lon2 = longitude + box_radius
+
+    cur = conn.cursor()
+    cur.execute(f"""
+                SELECT price, date_of_transfer, pp_data.postcode as postcode, property_type, new_build_flag, tenure_type, 
+                locality, town_city, district, county, country, latitude, longitude 
+                FROM pp_data
+                INNER JOIN postcode_data
+                ON pp_data.postcode = postcode_data.postcode
+                WHERE date_of_transfer BETWEEN '{d1}' AND '{d2}' AND
+                property_type = '{property_type}' AND
+                latitude BETWEEN {lat1} AND {lat2} AND
+                longitude BETWEEN {lon1} AND {lon2}
+                """)
+
+    rows = cur.fetchall()
+    return rows
+
+def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
+    rows = join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range, box_radius)
+    df = pd.DataFrame(rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
+                                     "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
+    df.to_csv('prices_coordinates_data.csv', index=False)
+    prices_coordinates_schema(conn)
+    load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
+
+def get_pois_features(latitude, longitude, tags, box_radius):
+    north = latitude + box_radius
+    south = latitude - box_radius
+    west = longitude - box_radius
+    east = longitude + box_radius
+    pois = ox.geometries_from_bbox(north, south, east, west, tags)
+    count_map = pois.count()
+    count_list = []
+    count_list.append(latitude)
+    count_list.append(longitude)
+    for tag in tags:
+        if tag in count_map:
+            count_list.append(float(min(15, count_map[tag])))
+        else:
+            count_list.append(float(0))
+    return count_list
