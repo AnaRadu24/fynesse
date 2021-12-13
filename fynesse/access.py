@@ -40,7 +40,7 @@ def write_credentials(username, password):
                             'password': password}
         yaml.dump(credentials_dict, file)
 
-# to protect the passowrd, create a credentials.yaml file locally that will store the username and password so that 
+# to protect the passoword, create a credentials.yaml file locally that will store the username and password so that 
 # the client can access the server without ever showing your password in the notebook.
 
 def create_connection(database_details):
@@ -242,8 +242,8 @@ def data():
     conn = create_connection(database_details=database_details)
     upload_pp_database(conn)
     upload_postcode_data(conn)
-    house_prices = pd.DataFrame(execute_query(conn, 'SELECT * FROM pp_data'), columns=price_paid_columns())
-    poscode_data = pd.DataFrame(execute_query(conn, 'SELECT * FROM postcode_data'), columns=postcode_columns())
+    house_prices = pd.DataFrame(execute_query(conn, 'SELECT * FROM pp_data'), columns=PP_COLUMNS)
+    poscode_data = pd.DataFrame(execute_query(conn, 'SELECT * FROM postcode_data'), columns=POSTCODE_COLUMNS)
     return pd.merge(house_prices, poscode_data, on = 'postcode', how = 'inner')  # the big merge
 
 def join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
@@ -277,8 +277,9 @@ def join_price_coordinates_with_date_location(conn, latitude, longitude, date, p
 
 def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
     rows = join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range, box_radius)
-    df = pd.DataFrame(rows, columns=PRICES_COORDINATES_COLUMNS)
-    df.to_csv('prices_coordinates_data.csv', index=False, header=False)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                    'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('prices_coordinates_data.csv', header=False, index=False)
     prices_coordinates_schema(conn)
     load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
 
