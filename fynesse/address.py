@@ -63,8 +63,10 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
     return int(y_pred)
 
 def test(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.03, pois_radius=0.005, max_training_size=15):
-    prices_coordinates_data = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
+    prices_coordinates_rows = join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
+    prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
+                                                                            "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
     if prices_coordinates_data.shape[0] == 0:
         print(f'No data points found. Cannot make prediction.')
     if prices_coordinates_data.shape[0] < 10:
