@@ -67,6 +67,7 @@ def view_prediction_accuracy(conn, latitude, longitude, date, property_type, dat
 
 def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
     pois_list = access.get_pois_features(latitude, longitude, tags, box_radius)
+    res = pois_list
     pois_list.reverse()
     print("Around point with latitude " + str(pois_list.pop()) + " and logitutde " + str(pois_list.pop()) + " on a radius of " +  str(box_radius*111) + "km there are a number of pois points of type: ")
     for tag in tags:
