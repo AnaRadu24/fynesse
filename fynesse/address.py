@@ -55,7 +55,6 @@ def train(dataset, max_training_size, tags, pois_radius):
 
 def predict(fitted_model, latitude, longitude, tags, pois_radius):
     x_pred = access.get_pois_features(latitude=latitude, longitude=longitude, tags=tags, box_radius=pois_radius)
-    assess.view_pois_points(latitude, longitude)
     y_pred = fitted_model.get_prediction(x_pred).summary_frame(alpha=0.05)['mean'][0]
     return y_pred
 
@@ -66,6 +65,7 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
                                                                             "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
     fitted_model = train(dataset=prices_coordinates_data, max_training_size=max_training_size, tags=tags, pois_radius=pois_radius)
     y_pred = predict(fitted_model=fitted_model, latitude=latitude, longitude=longitude, tags=tags, pois_radius=pois_radius)
+    assess.view_pois_points(latitude, longitude)
     print("Predicted price for a house of type " + property_type + "at latitude " + str(latitude) + " and longitude " + str(longitude) + " in " + date + 
         " based on the houses sold in the previous " + str(date_range) + " on a radius of " + str(pois_radius*111) + "km is " + str(int(y_pred)))
     return int(y_pred)
@@ -85,7 +85,7 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
     y_pred = []
     for pred in test_data.iterrows():
         y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
-    test_results = test_data[['price', 'price_prediction', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']]
-    test_results['price_prediction'] = y_pred
+    test_results = pd.DataFrame(y_pred, columns=['price_prediction'])
+    test_results[['price', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']] = test_data[['price', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']]
     display(test_results)
     return test_results
