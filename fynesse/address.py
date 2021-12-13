@@ -85,7 +85,7 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
     y_pred = []
     for pred in test_data.iterrows():
         y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
-    test_results = pd.DataFrame(y_pred, columns=['price_prediction'])
-    test_results[['price', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']] = test_data[['price', 'longitude', 'latitude', 'date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county']]
+    test_results = test_data[['date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county', 'longitude', 'latitude', 'price']]
+    test_results['price_prediction'] = y_pred
     display(test_results)
     return test_results
