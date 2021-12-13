@@ -198,9 +198,9 @@ def upload_pp_database(conn):
     pp_data_url = 'http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/'
     price_paid_schema(conn)
     for year in range(1995, 2022):
-        filename = 'pp-' + str(year)
+        filename = 'pp-' + str(year) + '.csv'
         urllib.request.urlretrieve(pp_data_url + filename, 'pp-data.csv')
-        load_data(conn, filename, 'pp_data.csv', 'pp_data')
+        load_data(conn, 'pp_data.csv', 'pp_data')
         print("Uploaded dataset from " + str(year))
     return 
 
@@ -211,6 +211,7 @@ def upload_postcode_data(conn):
         zip_ref.extractall('postcode_data_folder')
     print("data downloaded")
     load_data(conn, 'postcode_data_folder/open_postcode_geo.csv', 'postcode_data')
+    print("Uploaded postcode dataset ")
 
 def select_top(conn, table,  n):
     """
@@ -243,8 +244,7 @@ def data():
     upload_postcode_data(conn)
     house_prices = pd.DataFrame(execute_query(conn, 'SELECT * FROM pp_data'), columns=price_paid_columns())
     poscode_data = pd.DataFrame(execute_query(conn, 'SELECT * FROM postcode_data'), columns=postcode_columns())
-    # the big merge
-    return pd.merge(house_prices, poscode_data, on = 'postcode', how = 'inner')
+    return pd.merge(house_prices, poscode_data, on = 'postcode', how = 'inner')  # the big merge
 
 def join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
 
@@ -277,9 +277,24 @@ def join_price_coordinates_with_date_location(conn, latitude, longitude, date, p
 
 def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
     rows = join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range, box_radius)
-    df = pd.DataFrame(rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
-                                     "locality", "town_city", "district", "county", "country", "latitude", "longitude"])
-    df.to_csv('prices_coordinates_data.csv', index=False)
+    df = pd.DataFrame(rows, columns=PRICES_COORDINATES_COLUMNS)
+    df.to_csv('prices_coordinates_data.csv', index=False, header=False)
     prices_coordinates_schema(conn)
     load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
 
+def get_pois_features(latitude, longitude, tags, box_radius):
+    north = latitude + box_radius
+    south = latitude - box_radius
+    west = longitude - box_radius
+    east = longitude + box_radius
+    pois = ox.geometries_from_bbox(north, south, east, west, tags)
+    count_map = pois.count()
+    count_list = []
+    count_list.append(latitude)
+    count_list.append(longitude)
+    for tag in tags:
+        if tag in count_map:
+            count_list.append(float(min(15, count_map[tag])))
+        else:
+            count_list.append(float(0))
+    return count_list
