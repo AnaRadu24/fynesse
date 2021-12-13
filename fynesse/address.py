@@ -15,9 +15,9 @@ import tensorflow as tf
 import scipy.stats"""
 
 from . import access
-from access import *
+from .access import *
 from . import assess
-from assess import *
+from .assess import *
 
 import os
 import numpy as np
