@@ -14,8 +14,10 @@ import tensorflow as tf
 # Or if it's a statistical analysis
 import scipy.stats"""
 
-from .access import *
-from .assess import *
+from . import access
+from access import *
+from . import assess
+from assess import *
 
 import os
 import numpy as np

@@ -1,7 +1,9 @@
 from .config import *
 
-from .access import *
-from .address import *
+from . import access
+from access import *
+from . import address
+from address import *
 
 """These are the types of import we might expect in this file
 import pandas
@@ -64,13 +66,13 @@ def view_prediction_accuracy(conn, latitude, longitude, date, property_type, dat
     return evs(test_results.price_prediction, test_results.price)
 
 def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
-    pois_list = get_pois_features(latitude, longitude, tags, box_radius)
+    pois_list = access.get_pois_features(latitude, longitude, tags, box_radius)
     pois_list.reverse()
     print("Around point with latitude " + str(pois_list.pop()) + " and logitutde " + str(pois_list.pop()) + " on a radius of " +  box_radius*111 + "km there are a number of pois points of type: ")
     for tag in tags:
         print(tag + ": " + str(pois_list.pop()))
 
-        
+
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
