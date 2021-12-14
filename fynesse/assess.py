@@ -80,6 +80,38 @@ def plot_property_type_boxplot(conn, city, district):
     plt.ylabel('log price')
     plt.show()
 
+def plot_house_types_distributions(conn, city, district):
+    cur = conn.cursor()
+    cur.execute(f"""
+                    SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                    locality, town_city, district, county, country, latitude, longitude  
+                    FROM prices_coordinates_data
+                    WHERE town_city = '{city}' AND
+                    district = '{district}'
+                    """)
+
+    rows = cur.fetchall()
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                                'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    grouped = df.groupby('property_type')
+    fig, axs = plt.subplots(1,5)
+    fig.set_size_inches(20,5)
+    fig.suptitle('Price distributions in ' + city + ", " + district + " for the different types of houses", fontsize=20)
+    
+    property_types = ['D', 'S', 'T', 'F', 'O']
+    labels = ['detached', 'semi-detached', 'terraced', 'flat/maisonette', 'other']
+    colors = ['blue', 'red', 'green', 'orange', 'purple']
+    count = 0
+    for pt in property_types:
+      df.loc[(df.property_type == 'D')]
+      axs[count].hist(df.loc[(df.property_type == pt)].price, edgecolor=colors.pop(), alpha=.7, linewidth=3)
+      count = count + 1
+
+    fig.tight_layout()
+    fig.legend(axs, labels=labels, loc="upper right", borderaxespad=0.1)
+    fig.subplots_adjust(top=0.85)
+
 def plot_price_histograms(conn, city, district, property_type, date, date_range):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
@@ -135,7 +167,7 @@ def plot_price_distance(conn, latitude, longitude, date, property_type, date_ran
     df.longitude = df.longitude.astype("float")
     df['distance'] = haversine(longitude, latitude, df.longitude, df.latitude)
     plt.figure(figsize=(14,6))
-    df.plot(kind='scatter', x='distance', y='price', c='distance', cmap=plt.get_cmap('jet'), colorbar=True)
+    df.plot(kind='scatter', x='distance', y='price', c='distance', cmap=plt.get_cmap('jet'), colorbar=True, window_height=6)
     plt.title('Price vs Distance from point with latitude ' + str(latitude) + " and longitude " + str(longitude) + " for houses of type " + property_type)
     plt.xlabel('distance')
     plt.ylabel('price')
@@ -166,7 +198,7 @@ def plot_yearly_price(conn, city, district, property_type, date, date_range=365)
     grouped = pd.DataFrame(df.groupby('year')['price'].mean())
     grouped.reset_index(inplace=True)
     plt.figure(figsize=(14,6))
-    df.plot(kind='scatter', x='year', y='price', alpha=0.7, color = 'purple', label='prices in that year')
+    df.plot(kind='scatter', x='year', y='price', alpha=0.7, color = 'red', label='prices in that year')
     sns.lineplot(data=grouped, x='year', y='price', color='blue', label='average yearly price')
     plt.title("Yearly price variation in " + city + ", " + district + " for houses of type " + property_type)
     plt.xlabel('price')
@@ -175,25 +207,24 @@ def plot_yearly_price(conn, city, district, property_type, date, date_range=365)
     plt.show()
 
 def plot_monthly_price(conn, city, district, property_type, date, date_range=3650):
-  rows = access.select_cached(conn, city, district, property_type, date, date_range)
-  df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
-                                    'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
-  df['price'] = np.log(df['price'])
-  df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
-  df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
-  df['month'] = df['date_of_transfer'].dt.month
+    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                        'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df['price'] = np.log(df['price'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
+    df['month'] = df['date_of_transfer'].dt.month
 
-  grouped = pd.DataFrame(df.groupby('month')['price'].mean())
-  grouped.reset_index(inplace=True)
-  plt.figure(figsize=(14,6))
-  df.plot(kind='scatter', x='month', y='price', alpha=0.7, color = 'purple', label='prices in that month')
-  plt.title("Monthly price variation in " + str(date.dt.year) + ", " + city + ", " + district + " for houses of type " + property_type)
-  plt.xlabel('price')
-  plt.ylabel('month')
-  sns.lineplot(data=grouped, x='month', y='price', color='blue', label='average monthly price')
-  plt.title("Monthly price variation in time for houses in " + city + ", " + district + " for houses of type " + property_type)
-  plt.legend()
-  plt.show()
+    grouped = pd.DataFrame(df.groupby('month')['price'].mean())
+    grouped.reset_index(inplace=True)
+    plt.figure(figsize=(14,6))
+    df.plot(kind='scatter', x='month', y='price', alpha=0.7, color = 'purple', label='prices in that month')
+    plt.title("Monthly price variation in " + str(datetime.datetime.strptime(date, "%Y-%m-%d").year) + ", " + city + ", " + district + " for houses of type " + property_type)
+    plt.xlabel('price')
+    plt.ylabel('month')
+    sns.lineplot(data=grouped, x='month', y='price', color='blue', label='average monthly price')
+    plt.legend()
+    plt.show()
 
 def plot_corr(conn, city, district, property_type, date, date_range):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
