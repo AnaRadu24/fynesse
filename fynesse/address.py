@@ -1,35 +1,15 @@
 # This file contains code for suporting addressing questions in the data
-
-"""# Here are some of the imports we might expect 
-import sklearn.model_selection  as ms
-import sklearn.linear_model as lm
-import sklearn.svm as svm
-import sklearn.naive_bayes as naive_bayes
-import sklearn.tree as tree
-
-import GPy
-import torch
-import tensorflow as tf
-
-# Or if it's a statistical analysis
-import scipy.stats"""
+"""Address a particular question that arises from the data"""
 
 from . import access
 from .access import *
 from . import assess
 from .assess import *
 
-import os
 import numpy as np
 import pandas as pd
-import osmnx as ox
 import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import seaborn as sns # visualization
 from sklearn.model_selection import train_test_split # data split
-from sklearn.metrics import explained_variance_score as evs # evaluation metric
-
-"""Address a particular question that arises from the data"""
 
 TAGS = {"amenity": True, 
         "leisure": True, 
@@ -60,7 +40,7 @@ def predict(fitted_model, latitude, longitude, tags, pois_radius):
     y_pred = fitted_model.get_prediction(x_pred).summary_frame(alpha=0.05)['mean'][0]
     return y_pred
 
-def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.018, tags=TAGS, pois_radius=0.005, max_training_size=15):
+def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.018, tags=TAGS, pois_radius=0.005, max_training_size=20):
     prices_coordinates_rows = access.join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
@@ -69,7 +49,7 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
     y_pred = predict(fitted_model=fitted_model, latitude=latitude, longitude=longitude, tags=tags, pois_radius=pois_radius)
     #assess.view_pois_points(latitude, longitude)
     print("Predicted price for a house of type " + property_type + "at latitude " + str(latitude) + " and longitude " + str(longitude) + " in " + date + 
-        " based on the houses sold in the previous " + str(date_range) + " on a radius of " + str(pois_radius*111) + "km is " + str(int(y_pred)))
+        " based on the houses sold in the previous " + str(date_range) + " days on a radius of " + str(pois_radius*111) + "km is " + str(int(y_pred)))
     return int(y_pred)
 
 def test(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.018, tags=TAGS, pois_radius=0.005, max_training_size=20):

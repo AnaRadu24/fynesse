@@ -1,37 +1,23 @@
+# This file accesses the data
+
+"""Place commands in this file to access the data electronically. Don't remove any missing values, or deal with outliers. 
+Make sure you have legalities correct, both intellectual property and personal data privacy rights. Beyond the legal side 
+also think about the ethical issues around this data. """
+
 from .config import *
 from .address import *
 from .assess import *
 
-"""These are the types of import we might expect in this file
-import httplib2
-import oauth2
-import mongodb
-import sqlite"""
-
-import os
 import urllib.request
 import pandas as pd
+import numpy as np
 import pymysql
 import yaml
 from ipywidgets import interact_manual, Text, Password
 import urllib.request
 import datetime
 import osmnx as ox
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns # visualization
 import zipfile
-from sklearn.model_selection import train_test_split # data split
-from sklearn.metrics import explained_variance_score as evs # evaluation metric
-
-
-# This file accesses the data
-
-"""Place commands in this file to access the data electronically. Don't remove any missing values, or deal with outliers. 
-Make sure you have legalities correct, both intellectual property and personal data privacy rights. Beyond the legal side 
-also think about the ethical issues around this data. """
 
 # Write code for requesting and storing credentials (username, password) here. 
 @interact_manual(username=Text(description="Username:"), 
@@ -44,7 +30,6 @@ def write_credentials(username, password):
 
 # to protect the passoword, create a credentials.yaml file locally that will store the username and password so that 
 # the client can access the server without ever showing your password in the notebook.
-
 def create_connection(database_details):
     """ create a database connection to the SQLite database
         specified by the db_file
@@ -65,6 +50,28 @@ def create_connection(database_details):
     except Exception as e:
         print(f"Error connecting to the MariaDB Server: {e}")
     return initialise_db(conn, database_name)
+
+def select_top(conn, table,  n):
+    """
+    Query n first rows of the table
+    :param conn: the Connection object
+    :param table: The table to query
+    :param n: Number of rows to query
+    """
+    with conn.cursor() as cur:
+        cur.execute(f'SELECT * FROM {table} LIMIT {n}')
+    rows = cur.fetchall()
+    return rows
+
+def print_rows(rows):
+  for r in rows:
+    print(r)
+
+def execute_query(conn, query):
+  with conn.cursor() as cur:
+        cur.execute(query)
+  rows = cur.fetchall()
+  return rows
 
 def initialise_db(conn, database_name):
     with conn.cursor() as cur:
@@ -138,13 +145,6 @@ def postcode_schema(conn):
             `db_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY
         ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin; 
     """.replace("\n", " "))
-    #cur.execute("""ALTER TABLE `postcode_data` ADD PRIMARY KEY (`db_id`);""")
-    #conn.commit()
-    #cur.execute("""ALTER TABLE `postcode_data` MODIFY `db_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-    #    CREATE INDEX `po.postcode` USING HASH
-    #      ON `postcode_data`
-    #        (postcode);
-    #    """.replace("\n", " "))
     cur.execute("""CREATE INDEX `po.postcode` USING HASH ON `postcode_data` (postcode);""")
     cur.execute("""
         LOAD DATA LOCAL INFILE 'postcode_data_folder/open_postcode_geo.csv' INTO TABLE `postcode_data`
@@ -178,7 +178,6 @@ def prices_coordinates_schema(conn):
             `db_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY
             ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=1;
         """.replace("\n", " "))
-    #cur.execute("""ALTER TABLE `prices_coordinates_data` ADD PRIMARY KEY (`db_id`);""")
     cur.execute("""
         ALTER TABLE `prices_coordinates_data`
         MODIFY `db_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
@@ -214,28 +213,6 @@ def upload_postcode_data(conn):
     print("data downloaded")
     load_data(conn, 'postcode_data_folder/open_postcode_geo.csv', 'postcode_data')
     print("Uploaded postcode dataset ")
-
-def select_top(conn, table,  n):
-    """
-    Query n first rows of the table
-    :param conn: the Connection object
-    :param table: The table to query
-    :param n: Number of rows to query
-    """
-    with conn.cursor() as cur:
-        cur.execute(f'SELECT * FROM {table} LIMIT {n}')
-    rows = cur.fetchall()
-    return rows
-
-def print_rows(rows):
-  for r in rows:
-    print(r)
-
-def execute_query(conn, query):
-  with conn.cursor() as cur:
-        cur.execute(query)
-  rows = cur.fetchall()
-  return rows
 
 def data():
     """Read the data from the web or local file, returning structured format such as a data frame"""

@@ -1,3 +1,6 @@
+"""Place commands in this file to assess the data you have downloaded. How are missing values encoded, how are outliers encoded? What do columns represent, makes rure they are correctly labeled. 
+How is the data indexed. Crete visualisation routines to assess the data (e.g. in bokeh). Ensure that date formats are correct and correctly timezoned."""
+
 from .config import *
 
 from . import access
@@ -5,26 +8,13 @@ from .access import *
 from . import address
 from .address import *
 
-"""These are the types of import we might expect in this file
-import pandas
-import bokeh
-import matplotlib.pyplot as plt
-import sklearn.decomposition as decomposition
-import sklearn.feature_extraction"""
-
-"""Place commands in this file to assess the data you have downloaded. How are missing values encoded, how are outliers encoded? What do columns represent, makes rure they are correctly labeled. How is the data indexed. Crete visualisation routines to assess the data (e.g. in bokeh). Ensure that date formats are correct and correctly timezoned."""
-
-import os
 import numpy as np
 import pandas as pd
-import osmnx as ox
 import datetime
-import statsmodels.api as sm
+from math import radians, cos, sin, asin, sqrt
 import matplotlib.pyplot as plt
 import seaborn as sns # visualization
-from sklearn.model_selection import train_test_split # data split
 from sklearn.metrics import explained_variance_score as evs # evaluation metric
-from math import radians, cos, sin, asin, sqrt
 
 TAGS = {"amenity": True, 
         "leisure": True, 
@@ -273,19 +263,3 @@ def plot_test_bars(test_results):
 def view_prediction_accuracy(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
     test_results = address.test(conn, latitude, longitude, date, property_type, date_range, data_distance, tags, pois_radius, max_training_size)
     plot_test_bars(test_results)
-
-def data():
-    """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
-    df = access.data()
-
-
-def query(data):
-    """Request user input for some aspect of the data."""
-    
-
-def view(data):
-    """Provide a view of the data that allows the user to verify some aspect of its quality."""
-    
-
-def labelled(data):
-    """Provide a labelled set of data ready for supervised learning."""
