@@ -58,22 +58,38 @@ def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
     for tag in tags:
         print(tag + ": " + str(pois_list.pop()))
 
-def plot_property_type_boxplot(conn, city, district, property_type, date, date_range):
-    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+def plot_property_type_boxplot(conn, city, district):
+    cur = conn.cursor()
+    cur.execute(f"""
+                    SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                    locality, town_city, district, county, country, latitude, longitude  
+                    FROM prices_coordinates_data
+                    WHERE town_city = '{city}' AND
+                    district = '{district}'
+                    """)
+
+    rows = cur.fetchall()
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
-                                            'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+                                                'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
     df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    df['price'] = np.log(df['price'])
     grouped = df.groupby('property_type')
-    grouped.boxplot(column='price')
+    grouped.boxplot(column='price', figsize=(8,10), subplots=False)
+    plt.title('Log Price in ' + city + ", " + district + " for the different types of houses")
+    plt.xlabel('house type')
+    plt.ylabel('log price')
+    plt.show()
 
 def plot_price_histograms(conn, city, district, property_type, date, date_range):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
                                             'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
     df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
-    plt.hist(df.price, label='series1', alpha=.8, edgecolor='red')
+    plt.figure(figsize=(10,6))
+    plt.hist(df.price, label='series1', alpha=.7, edgecolor='red', linewidth=2)
     plt.title('Price Histogram ' + city + ", " + district + " for houses of type " + property_type)
-    plt.ylabel('Price Distribution')
+    plt.ylabel('Price')
+    plt.ylabel('Frequency')
     plt.show()
 
 def plot_lat_long_price(conn, city, district, property_type, date, date_range=3650):
@@ -86,7 +102,6 @@ def plot_lat_long_price(conn, city, district, property_type, date, date_range=36
     plt.title('Price Map in ' + city + ", " + district + " for houses of type " + property_type)
     plt.xlabel('latitude')
     plt.ylabel('longitude')
-    plt.legend()
     plt.show()
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -119,11 +134,11 @@ def plot_price_distance(conn, latitude, longitude, date, property_type, date_ran
     df.latitude = df.latitude.astype("float")
     df.longitude = df.longitude.astype("float")
     df['distance'] = haversine(longitude, latitude, df.longitude, df.latitude)
-    df.plot(kind='scatter', x='distance', y='price')
+    plt.figure(figsize=(14,6))
+    df.plot(kind='scatter', x='distance', y='price', c='distance', cmap=plt.get_cmap('jet'), colorbar=True)
     plt.title('Price vs Distance from point with latitude ' + str(latitude) + " and longitude " + str(longitude) + " for houses of type " + property_type)
-    plt.xlabel('price')
-    plt.ylabel('distance')
-    plt.legend()
+    plt.xlabel('distance')
+    plt.ylabel('price')
     plt.show()
 
 def plot_price_in_time(conn, latitude, longitude, date, property_type, date_range=7000, box_radius=0.01):
@@ -140,7 +155,7 @@ def plot_price_in_time(conn, latitude, longitude, date, property_type, date_rang
     plt.legend()
     plt.show()
 
-def plot_year_price(conn, city, district, property_type, date, date_range=365):
+def plot_yearly_price(conn, city, district, property_type, date, date_range=365):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
                                         'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
@@ -148,15 +163,14 @@ def plot_year_price(conn, city, district, property_type, date, date_range=365):
     df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
     df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
     df['year'] = df['date_of_transfer'].dt.year
-    
-    plt.figure(figsize=(14,6))
     grouped = pd.DataFrame(df.groupby('year')['price'].mean())
     grouped.reset_index(inplace=True)
-    df.plot(kind='scatter', x='year', y='price', alpha=0.7)
-    sns.lineplot(data=grouped, x='year', y='price', color='blue')
+    plt.figure(figsize=(14,6))
+    df.plot(kind='scatter', x='year', y='price', alpha=0.7, color = 'purple', label='prices in that year')
+    sns.lineplot(data=grouped, x='year', y='price', color='blue', label='average yearly price')
     plt.title("Yearly price variation in " + city + ", " + district + " for houses of type " + property_type)
     plt.xlabel('price')
-    plt.ylabel('date')
+    plt.ylabel('year')
     plt.legend()
     plt.show()
 
@@ -171,13 +185,13 @@ def plot_monthly_price(conn, city, district, property_type, date, date_range=365
 
   grouped = pd.DataFrame(df.groupby('month')['price'].mean())
   grouped.reset_index(inplace=True)
-
-  df.plot(kind='scatter', x='month', y='price', alpha=0.7)
+  plt.figure(figsize=(14,6))
+  df.plot(kind='scatter', x='month', y='price', alpha=0.7, color = 'purple', label='prices in that month')
   plt.title("Monthly price variation in " + str(date.dt.year) + ", " + city + ", " + district + " for houses of type " + property_type)
   plt.xlabel('price')
-  plt.ylabel('date')
-  sns.lineplot(data=grouped, x='month', y='price', color='blue')
-  plt.title("Price variation in time for houses in Waltham Forest")
+  plt.ylabel('month')
+  sns.lineplot(data=grouped, x='month', y='price', color='blue', label='average monthly price')
+  plt.title("Monthly price variation in time for houses in " + city + ", " + district + " for houses of type " + property_type)
   plt.legend()
   plt.show()
 

@@ -334,7 +334,15 @@ def cache_prices_coordinates_data(conn, city, district, property_type, date, dat
 def upload_prices_coordinates_data(conn, date_range=3650, limit=1000000):
     prices_coordinates_schema(conn)
     cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'S', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'D', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'T', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'O', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'F', '2020-06-30', date_range, limit)
     cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'D', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'S', '2020-06-30', date_range=3650, limit=1000000)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'T', '2020-06-30', date_range=3650, limit=1000000)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'O', '2020-06-30', date_range=3650, limit=1000000)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'F', '2020-06-30', date_range=3650, limit=1000000)
 
 def select_cached(conn, city, district, property_type, date, date_range):
     
