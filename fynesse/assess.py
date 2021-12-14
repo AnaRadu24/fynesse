@@ -173,6 +173,38 @@ def plot_monthly_price(conn, city, district, property_type, date, date_range=365
   plt.legend()
   plt.show()
 
+def plot_corr(conn, city, district, property_type, date, date_range):
+    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+    data = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                        'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    data = data.sample(n = 40, random_state=0)
+    data.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    x = []
+    y = []
+    z = []
+    for house in data.iterrows():
+        pois_data = access.get_pois_features(float(house[1].latitude), float(house[1].longitude))
+        x.append(pois_data)
+        y.append(house[1].price)
+        z.append([house[1].date_of_transfer, house[1].new_build_flag, house[1].tenure_type, house[1].locality, house[1].town_city, house[1].district])
+    df = pd.DataFrame(y, columns=['price'])
+    df[["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"]] = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
+    df[["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"]] = pd.DataFrame(z, columns=["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"])
+    
+    for tag in address.TAGS: 
+        correlation = df['price'].corr(df[tag])
+        plt.figure(figsize=(25,15))
+        plt.scatter(df[tag],df['price'], label=tag)
+        slope, intercept, r, p, stderr = scipy.stats.linregress(df[tag], df['price'])
+        line = f'Regression line: y={intercept:.1f}+{slope:.1f}x, r={r:.1f}'
+        plt.plot(df[tag], intercept + slope * df[tag], label=line, color = 'black')
+        print("Correlation for tag " + tag + ": " + str(correlation))
+    plt.title("Price vs no. of pois points in " + city + ", " + district + " for houses of type " + property_type)
+    plt.xlabel('number of pois points')
+    plt.ylabel('price')
+    plt.legend()
+    plt.show()
+
 def plot_test_bars(test_results):
     plt.figure(figsize=(10,6))
     plt.title("Predicted Price vs Actual Price for " + test_results.town_city[0] + ", " + test_results.district[0] + " - Variance Score: " + str(evs(test_results.price_prediction, test_results.price)))
