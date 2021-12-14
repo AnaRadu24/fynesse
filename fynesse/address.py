@@ -60,7 +60,7 @@ def predict(fitted_model, latitude, longitude, tags, pois_radius):
     y_pred = fitted_model.get_prediction(x_pred).summary_frame(alpha=0.05)['mean'][0]
     return y_pred
 
-def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
+def make_prediction(conn, latitude, longitude, property_type, date, date_range=180, data_distance=0.018, tags=TAGS, pois_radius=0.005, max_training_size=15):
     prices_coordinates_rows = access.join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
@@ -72,7 +72,7 @@ def make_prediction(conn, latitude, longitude, property_type, date, date_range=1
         " based on the houses sold in the previous " + str(date_range) + " on a radius of " + str(pois_radius*111) + "km is " + str(int(y_pred)))
     return int(y_pred)
 
-def test(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.03, tags=TAGS, pois_radius=0.005, max_training_size=15):
+def test(conn, latitude, longitude, date, property_type, date_range=180, data_distance=0.018, tags=TAGS, pois_radius=0.005, max_training_size=20):
     prices_coordinates_rows = access.join_price_coordinates_with_date_location(conn, latitude=latitude, longitude=longitude, date=date, 
                                                                         property_type=property_type, date_range=date_range, box_radius=data_distance)
     prices_coordinates_data = pd.DataFrame(prices_coordinates_rows, columns=["price", "date_of_transfer", "postcode", "property_type", "new_build_flag", "tenure_type", 
@@ -87,7 +87,7 @@ def test(conn, latitude, longitude, date, property_type, date_range=180, data_di
     y_pred = []
     for pred in test_data.iterrows():
         y_pred.append(int(predict(fitted_model=fitted_model, latitude=float(pred[1].latitude), longitude=float(pred[1].longitude), tags=tags, pois_radius=pois_radius)))
-    test_results = test_data[['date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county', 'longitude', 'latitude', 'price']]
+    test_results = pd.DataFrame(test_data[['date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county', 'longitude', 'latitude', 'price']], columns=['date_of_transfer', 'new_build_flag', 'tenure_type', 'property_type', 'town_city', 'district', 'county', 'longitude', 'latitude', 'price'])
     test_results['price_prediction'] = y_pred
     display(test_results)
     return test_results

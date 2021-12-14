@@ -261,7 +261,7 @@ def plot_corr(conn, city, district, property_type, date, date_range):
 
 def plot_test_bars(test_results):
     plt.figure(figsize=(10,6))
-    plt.title("Predicted Price vs Actual Price for " + test_results.town_city[0] + ", " + test_results.district[0] + " - Variance Score: " + str(evs(test_results.price_prediction, test_results.price)))
+    plt.title("Predicted Price vs Actual Price for " + test_results.iloc[0]['town_city'] + ", " + test_results.iloc[0]['district'] + " - Variance Score: " + str(evs(test_results.price_prediction, test_results.price)))
     test_results = test_results.reset_index()
     sns.barplot(x=test_results.index, y=test_results.price, alpha=0.9, edgecolor='red', color='pink', linewidth=2, label='actual price')
     sns.barplot(x=test_results.index, y=test_results.price_prediction, alpha=0.5, edgecolor='blue', color='darkblue', linewidth=3, label='predicted price')

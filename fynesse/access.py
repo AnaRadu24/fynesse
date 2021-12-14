@@ -248,7 +248,7 @@ def data():
     poscode_data = pd.DataFrame(execute_query(conn, 'SELECT * FROM postcode_data'), columns=POSTCODE_COLUMNS)
     return pd.merge(house_prices, poscode_data, on = 'postcode', how = 'inner')  # the big merge
 
-def join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
+def join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.02):
 
     d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
     d2 = d1
