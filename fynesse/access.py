@@ -287,7 +287,7 @@ def select_town_city(conn, city, district, property_type, date, date_range, limi
 
     cur = conn.cursor()
     cur.execute(f"""
-                SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                SELECT price, date_of_transfer, pp_data.postcode as postcode, property_type, new_build_flag, tenure_type, 
                 locality, town_city, district, county, country, latitude, longitude  
                 FROM pp_data
                 INNER JOIN postcode_data
@@ -299,6 +299,28 @@ def select_town_city(conn, city, district, property_type, date, date_range, limi
                 ORDER BY RAND ( )
                 LIMIT {limit}
                 """)
+    rows = cur.fetchall()
+    return rows
+
+def select_cached(conn, city, district, property_type, date, date_range):
+    
+    d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
+    d2 = d1
+    d1 = d1 - datetime.timedelta(days=date_range)
+    d1 = d1.strftime("%Y-%m-%d")
+    d2 = d2.strftime("%Y-%m-%d")
+
+    cur = conn.cursor()
+    cur.execute(f"""
+                SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                locality, town_city, district, county, country, latitude, longitude  
+                FROM prices_coordinates_data
+                WHERE town_city = '{city}' AND
+                district = '{district}' AND
+                property_type = '{property_type}' AND
+                date_of_transfer BETWEEN '{d1}' AND '{d2}'
+                """)
+
     rows = cur.fetchall()
     return rows
 
