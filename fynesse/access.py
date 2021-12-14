@@ -277,13 +277,64 @@ def join_price_coordinates_with_date_location(conn, latitude, longitude, date, p
     rows = cur.fetchall()
     return rows
 
-def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
-    rows = join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range, box_radius)
+def select_town_city(conn, city, district, property_type, date, date_range):
+    
+    d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
+    d2 = d1
+    d1 = d1 - datetime.timedelta(days=date_range)
+    d1 = d1.strftime("%Y-%m-%d")
+    d2 = d2.strftime("%Y-%m-%d")
+
+    cur = conn.cursor()
+    cur.execute(f"""
+                SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                locality, town_city, district, county, country, latitude, longitude  
+                FROM pp_data
+                INNER JOIN postcode_data
+                ON pp_data.postcode = postcode_data.postcode
+                WHERE town_city = '{city}' AND
+                district = '{district}' AND
+                property_type = '{property_type}' AND
+                date_of_transfer BETWEEN '{d1}' AND '{d2}'
+                ORDER BY RAND ( )
+                LIMIT 1000000
+                """)
+    rows = cur.fetchall()
+    return rows
+
+def cache_prices_coordinates_data(conn, city, district, property_type, date, date_range):
+    rows = select_town_city(conn, city, district, property_type, date, date_range)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
                                     'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
-    df.to_csv('prices_coordinates_data.csv', header=False, index=False)
+    df.to_csv('cached_prices_coordinates_data.csv', header=False, index=False)
+    access.load_data(conn, 'cached_prices_coordinates_data.csv', 'prices_coordinates_data')
+
+def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
     prices_coordinates_schema(conn)
-    load_data(conn, 'prices_coordinates_data.csv', 'prices_coordinates_data')
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'S', '2020-06-30', date_range)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'D', '2020-06-30', date_range)
+
+def select_cached(conn, city, district, property_type, date, date_range):
+    
+    d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
+    d2 = d1
+    d1 = d1 - datetime.timedelta(days=date_range)
+    d1 = d1.strftime("%Y-%m-%d")
+    d2 = d2.strftime("%Y-%m-%d")
+
+    cur = conn.cursor()
+    cur.execute(f"""
+                SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, 
+                locality, town_city, district, county, country, latitude, longitude  
+                FROM prices_coordinates_data
+                WHERE town_city = '{city}' AND
+                district = '{district}' AND
+                property_type = '{property_type}' AND
+                date_of_transfer BETWEEN '{d1}' AND '{d2}'
+                """)
+
+    rows = cur.fetchall()
+    return rows
 
 # 0.02 degrees wide approx 2.2km, 1 degree is around 111km
 def get_pois_features(latitude, longitude, tags=TAGS, box_radius=0.005):
