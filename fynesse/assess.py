@@ -58,7 +58,15 @@ def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
     for tag in tags:
         print(tag + ": " + str(pois_list.pop()))
 
-def plt_price_histograms(conn, city, district, property_type, date, date_range):
+def plot_property_type_boxplot(conn, city, district, property_type, date, date_range):
+    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                            'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    grouped = df.groupby('property_type')
+    grouped.boxplot(column='price')
+
+def plot_price_histograms(conn, city, district, property_type, date, date_range):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
                                             'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])

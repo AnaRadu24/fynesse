@@ -51,7 +51,7 @@ def train(dataset, max_training_size, tags, pois_radius):
     df = pd.DataFrame(y, columns=['price'])
     df[["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"]] = pd.DataFrame(x, columns=["latitude", "longitude", "amenity", "leisure", "shop", "healthcare", "sport", "public_transport"])
     df[["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"]] = pd.DataFrame(z, columns=["date_of_transfer", "new_build_flag", "tenure_type", "locality", "town_city", "district"])
-    display(df)
+    #display(df)
     fitted_model = sm.GLM(y, x, family = sm.families.Poisson()).fit()
     return fitted_model
 
