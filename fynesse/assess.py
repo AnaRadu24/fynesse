@@ -58,12 +58,14 @@ def view_pois_points(latitude, longitude, tags=TAGS, box_radius=0.005):
     for tag in tags:
         print(tag + ": " + str(pois_list.pop()))
 
-def plot_price_histograms(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
-    access.upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range, box_radius)
-    df = pd.read_csv('prices_coordinates_data.csv', names=access.PRICES_COORDINATES_COLUMNS)
-    df = df[['price', 'latitude', 'longitude', 'date_of_transfer', 'town_city',	'new_build_flag',	'tenure_type', 'property_type', 'town_city',	'district',	'county']]
+def plt_price_histograms(conn, city, district, property_type, date, date_range):
+    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                            'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
     plt.hist(df.price, label='series1', alpha=.8, edgecolor='red')
     plt.show()
+    display(df)
 
 def plot_lat_long_price(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
     rows = access.select_cached(conn, city, district, property_type, date, date_range)
@@ -98,8 +100,10 @@ def haversine(lon1, lat1, lon2, lat2):
     return np.multiply(c, 2*6371)
 
 def plot_price_distance(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
-    #access.upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range, box_radius)
-    df = pd.read_csv('prices_coordinates_data.csv', names=access.PRICES_COORDINATES_COLUMNS)
+    rows = access.join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                                'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
     df.latitude = df.latitude.astype("float")
     df.longitude = df.longitude.astype("float")
     df['distance'] = haversine(longitude, latitude, df.longitude, df.latitude)
@@ -108,15 +112,53 @@ def plot_price_distance(conn, latitude, longitude, date, property_type, date_ran
     plt.show()
 
 def plot_price_in_time(conn, latitude, longitude, date, property_type, date_range=7000, box_radius=0.01):
-    #access.upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range, box_radius)
-    df = pd.read_csv('prices_coordinates_data.csv', names=access.PRICES_COORDINATES_COLUMNS)
+    rows = access.join_price_coordinates_with_date_location(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                                'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
     df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
     plt.figure(figsize=(14,6))
-    #df.plot(kind='scatter', x='date_of_transfer', y='price', alpha=0.7)
     sns.lineplot(data=df, x='date_of_transfer', y='price', color='blue')
     plt.title("Price variation in time for houses in Waltham Forest")
     plt.legend()
     plt.show()
+
+def plot_year_price(conn, city, district, property_type, date, date_range=365):
+    rows = access.select_cached(conn, city, district, property_type, date, date_range)
+    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                        'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+    df['price'] = np.log(df['price'])
+    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+    df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
+    df['year'] = df['date_of_transfer'].dt.year
+    
+    plt.figure(figsize=(14,6))
+    grouped = pd.DataFrame(df.groupby('year')['price'].mean())
+    grouped.reset_index(inplace=True)
+    df.plot(kind='scatter', x='year', y='price', alpha=0.7)
+    sns.lineplot(data=grouped, x='year', y='price', color='blue')
+    plt.title("Price variation in time for houses in Waltham Forest")
+    plt.legend()
+    plt.show()
+
+def plot_monthly_price(conn, city, district, property_type, date, date_range=3650):
+  rows = access.select_cached(conn, city, district, property_type, date, date_range)
+  df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
+                                    'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
+  df['price'] = np.log(df['price'])
+  df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
+  df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
+  df['month'] = df['date_of_transfer'].dt.month
+
+  grouped = pd.DataFrame(df.groupby('month')['price'].mean())
+  grouped.reset_index(inplace=True)
+
+  df.plot(kind='scatter', x='month', y='price', alpha=0.7)
+  sns.lineplot(data=grouped, x='month', y='price', color='blue')
+  #sns.barplot(data=df, x='month', y=df['price'], alpha=0.3)
+  plt.title("Price variation in time for houses in Waltham Forest")
+  plt.legend()
+  plt.show()
 
 def plot_test_bars(test_results):
     plt.figure(figsize=(10,6))
@@ -133,45 +175,6 @@ def view_prediction_accuracy(conn, latitude, longitude, date, property_type, dat
     test_results = address.test(conn, latitude, longitude, date, property_type, date_range, data_distance, tags, pois_radius, max_training_size)
     plot_test_bars(test_results)
     return evs(test_results.price_prediction, test_results.price)
-
-def plot_monthly_price(conn, city, district, property_type, date, date_range=3650):
-    rows = access.select_cached(conn, city, district, property_type, date, date_range)
-    df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
-                                        'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
-    df['date_of_transfer'] = pd.to_datetime(df['date_of_transfer'])
-    df['month'] = df['date_of_transfer'].dt.month
-    df['year'] = df['date_of_transfer'].dt.year
-    df.to_csv('selected_prices_coordinates_data.csv', header=False, index=False)
-    df_2020 = df.loc[(df["year"] == "2020")]
-    df_2019 = df.loc[(df["year"] == "2019")]
-    
-    grouped_year = pd.DataFrame(df.groupby('year')['price'].mean())
-    grouped_year.reset_index(inplace=True)
-    grouped_month_2020 = pd.DataFrame(df_2019.groupby('month')['price'].mean())
-    grouped_month_2020.reset_index(inplace=True)
-    grouped_month_2019 = pd.DataFrame(df_2019.groupby('month')['price'].mean())
-    grouped_month_2019.reset_index(inplace=True)
-
-    plt.subplot(221)
-    df.plot(kind='scatter', x='year', y='price', alpha=0.7)
-    sns.lineplot(data=grouped_year, x='year', y='price', color='blue')
-    plt.title("Price variation in time for houses in " + city)
-    plt.legend()
-    plt.show()
-
-    plt.subplot(222)
-    df_2020.plot(kind='scatter', x='month', y='price', alpha=0.7)
-    sns.lineplot(data=grouped_month_2020, x='month', y='price', color='blue')
-    plt.title("Price variation in time for houses in Waltham Forest")
-    plt.legend()
-    plt.show()
-
-    plt.subplot(223)
-    df_2019.plot(kind='scatter', x='month', y='price', alpha=0.7)
-    sns.lineplot(data=grouped_month_2019, x='month', y='price', color='blue')
-    plt.title("Price variation in time for houses in Waltham Forest")
-    plt.legend()
-    plt.show()
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""

@@ -331,7 +331,7 @@ def cache_prices_coordinates_data(conn, city, district, property_type, date, dat
     df.to_csv('cached_prices_coordinates_data.csv', header=False, index=False)
     access.load_data(conn, 'cached_prices_coordinates_data.csv', 'prices_coordinates_data')
 
-def upload_prices_coordinates_data(conn, date_range=360, limit=100000):
+def upload_prices_coordinates_data(conn, date_range=3650, limit=1000000):
     prices_coordinates_schema(conn)
     cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'S', '2020-06-30', date_range, limit)
     cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'D', '2020-06-30', date_range, limit)
