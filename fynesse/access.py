@@ -277,7 +277,7 @@ def join_price_coordinates_with_date_location(conn, latitude, longitude, date, p
     rows = cur.fetchall()
     return rows
 
-def select_town_city(conn, city, district, property_type, date, date_range):
+def select_town_city(conn, city, district, property_type, date, date_range, limit):
     
     d1 = datetime.datetime.strptime(date, "%Y-%m-%d")
     d2 = d1
@@ -297,22 +297,22 @@ def select_town_city(conn, city, district, property_type, date, date_range):
                 property_type = '{property_type}' AND
                 date_of_transfer BETWEEN '{d1}' AND '{d2}'
                 ORDER BY RAND ( )
-                LIMIT 1000000
+                LIMIT {limit}
                 """)
     rows = cur.fetchall()
     return rows
 
-def cache_prices_coordinates_data(conn, city, district, property_type, date, date_range):
-    rows = select_town_city(conn, city, district, property_type, date, date_range)
+def cache_prices_coordinates_data(conn, city, district, property_type, date, date_range, limit):
+    rows = select_town_city(conn, city, district, property_type, date, date_range, limit)
     df = pd.DataFrame(rows, columns=['price', 'date_of_transfer', 'postcode', 'property_type', 'new_build_flag', 'tenure_type',
                                     'locality', 'town_city', 'district', 'county', 'country', 'latitude', 'longitude'])
     df.to_csv('cached_prices_coordinates_data.csv', header=False, index=False)
     access.load_data(conn, 'cached_prices_coordinates_data.csv', 'prices_coordinates_data')
 
-def upload_prices_coordinates_data(conn, latitude, longitude, date, property_type, date_range=180, box_radius=0.04):
+def upload_prices_coordinates_data(conn, date_range=360, limit=100000):
     prices_coordinates_schema(conn)
-    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'S', '2020-06-30', date_range)
-    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'D', '2020-06-30', date_range)
+    cache_prices_coordinates_data(conn, 'LONDON', 'WALTHAM FOREST', 'S', '2020-06-30', date_range, limit)
+    cache_prices_coordinates_data(conn, 'CAMBRIDGE', 'CAMBRIDGE', 'D', '2020-06-30', date_range, limit)
 
 def select_cached(conn, city, district, property_type, date, date_range):
     
